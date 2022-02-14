@@ -9,10 +9,8 @@ public class PostgresManager extends DatabaseManager {
 
     @Override
     public String getVolumeQuery() {
-
-        String filter = "";
         // Generating WHERE clause from user's exclude input.
-        filter = "where schemaname != ";
+        String filter = "where schemaname != ";
         boolean firstSchema = true;
         for (String s : excludedSchemas) {
             if (firstSchema) {

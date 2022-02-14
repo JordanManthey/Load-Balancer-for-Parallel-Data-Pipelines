@@ -3,6 +3,7 @@ package com.pipelines;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Map;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
 
@@ -31,6 +32,21 @@ public abstract class DatabaseManager {
                 excludedSchemas.add(e);
             }
         }
+    }
+
+    // Returns a list of all schemas
+    public static ArrayList<String> getSchemas(Map<Integer, String[]> map, Integer currKey) {
+
+        ArrayList<String> schemas = new ArrayList<String>();
+        String[] schemaTables = map.get(currKey)[0].split(";");
+        for (String s : schemaTables) {
+            int iend = s.indexOf(".");
+            s = s.substring(0, iend);
+            if (!schemas.contains(s)) {
+                schemas.add(s);
+            }
+        }
+        return schemas;
     }
 
     // Returns the table volume query for this database.
