@@ -4,53 +4,58 @@ import java.util.Scanner;
 
 public class CommandLineManager {
 
-
-    public static String NUM_APPS;
-    public static String NUM_CORES;
-    public static String EXCLUDE;
-    public static String SOURCE_TYPE;
-
-    public CommandLineManager() {
-
-    }
-
-    // Get user input and set static variables
-    public static void getUserInput() {
+    // Returns an instance of the correct DBManager from user input.
+    public static DatabaseManager buildDBManagerFromUserInput() {
 
         Scanner scan = new Scanner(System.in);
         System.out.println("Enter source JDBC URL: ");
         String connectionURL = scan.nextLine();
         System.out.println("Enter schemas and tables to exclude:");
-        EXCLUDE = scan.nextLine().replaceAll("\\s+","");
+        String excludeList = scan.nextLine().replaceAll("\\s+","");
         System.out.println("Enter username: ");
         String username = scan.nextLine();
         System.out.println("Enter password: ");
         String password = scan.nextLine();
         System.out.println("Enter # IL applications: ");
-        NUM_APPS = scan.nextLine();
+        int numApps = Integer.valueOf(scan.nextLine());
         System.out.println("Enter # Striim cores: ");
-        NUM_CORES = scan.nextLine();
+        int numCores = Integer.valueOf(scan.nextLine());
         scan.close();
+
+        String sourceType = connectionURL.split(":", 3)[1];
+
+        switch (sourceType) {
+            case "postgresql":
+                return new PostgresManager(connectionURL, username, password, excludeList);
+            case "sqlserver":
+                return new SQLServerManager(connectionURL, username, password, excludeList);
+            case "oracle":
+                return new OracleManager(connectionURL, username, password, excludeList);
+            case "mysql":
+                return new MySQLManager(connectionURL, username, password, excludeList);
+            default:
+                return null;
+        }
     }
 
-    public static void getTQLInput() {
+    public static FileGenerator buildFileGeneratorFromUserInput() {
         Scanner scan = new Scanner(System.in);
         System.out.println("Enter target JDBC URL: ");
-        String url = scan.nextLine();
+        String sourceURL = scan.nextLine();
         System.out.println("Enter username: ");
-        String user = scan.nextLine();
+        String sourceUser = scan.nextLine();
         System.out.println("Enter password: ");
-        String pass = scan.nextLine();
-        System.out.println("Enter application name: ");
-        String appName = scan.nextLine();
-        System.out.println("Enter source name: ");
-        String sourceName = scan.nextLine();
-        System.out.println("Enter stream name: ");
-        String streamName = scan.nextLine();
-        System.out.println("Enter target name: ");
-        String targetName = scan.nextLine();
+        String sourcePass = scan.nextLine();
+        System.out.println("Enter target JDBC URL: ");
+        String targetURL = scan.nextLine();
+        System.out.println("Enter username: ");
+        String targetUser = scan.nextLine();
+        System.out.println("Enter password: ");
+        String targetPass = scan.nextLine();
         System.out.println("");
         scan.close();
+
+        return new FileGenerator(sourceURL, sourceUser, sourcePass, targetURL, targetUser, targetPass);
     }
 
     public static boolean proposeTableSplit(String tableName, double tableVolume, double goalDifference) {

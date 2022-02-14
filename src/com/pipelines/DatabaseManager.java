@@ -1,6 +1,5 @@
 package com.pipelines;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Map;
@@ -10,20 +9,19 @@ import javax.sql.rowset.RowSetProvider;
 public abstract class DatabaseManager {
 
     protected static String jdbcDriver;
-    protected String sourceType;
     protected String connectionURL;
     protected String username;
     protected String password;
     protected ArrayList<String> excludedTables;
     protected ArrayList<String> excludedSchemas;
     protected boolean canPartitionTables;
+    protected Map<String, ArrayList<String>> partitionMap;
 
     public DatabaseManager(String connectionURL, String username, String password, String excludedString) {
 
         this.connectionURL = connectionURL;
         this.username = username;
         this.password = password;
-        this.sourceType = connectionURL.split(":", 3)[1];
         this.canPartitionTables = false;
 
         // Separate exclude schemas and tables
@@ -55,7 +53,7 @@ public abstract class DatabaseManager {
     public abstract String getVolumeQuery();
 
     // Queries the source database for data volume information for each table and returns the results in desc order.
-    public CachedRowSet getTableDataVolumes() throws IOException, ClassNotFoundException, SQLException {
+    public CachedRowSet getTableDataVolumes() throws ClassNotFoundException, SQLException {
 
         String query = getVolumeQuery();
         // Connect to source database and execute query

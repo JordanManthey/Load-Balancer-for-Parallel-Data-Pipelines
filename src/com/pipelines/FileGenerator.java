@@ -26,7 +26,7 @@ public class FileGenerator {
         this.targetPass = targetPass;
     }
 
-    // Asks user for information required to fill out remaining TQL properties and generates a TQL for each application
+    // Generates a TQL file for each application in the same directory as this JAR file.
     public void generateTQL(Map<Integer, String[]> appMap, Map<String, ArrayList<String>> partitionMap) throws IOException {
 
         for (Integer key : appMap.keySet()) {

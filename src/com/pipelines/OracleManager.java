@@ -2,11 +2,8 @@ package com.pipelines;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Map;
 
 public class OracleManager extends DatabaseManager {
-
-    private Map<String, ArrayList<String>> partitionMap;
 
     public OracleManager(String connectionURL, String username, String password, String excludeList) {
         super(connectionURL, username, password, excludeList);

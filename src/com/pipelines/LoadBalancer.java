@@ -13,21 +13,21 @@ public class LoadBalancer {
     public int numCores;
 
     // Allocates parallel threads to each Striim application proportional to the data volume its responsible for
-    public void allocateCores(Map<Integer, String[]> map, double sum) {
+    public void allocateCores(Map<Integer, String[]> appMap, double sum) {
 
-        for (Integer key : map.keySet()) {
+        for (Integer key : appMap.keySet()) {
 
-            if (!map.get(key)[1].equals("")) {
-                int cores = (int) ((numCores * Double.valueOf(map.get(key)[1])) / sum);
-                String[] newVal = map.get(key);
+            if (!appMap.get(key)[1].equals("")) {
+                int cores = (int) ((numCores * Double.valueOf(appMap.get(key)[1])) / sum);
+                String[] newVal = appMap.get(key);
                 newVal[2] = String.valueOf(cores);
-                map.put(key, newVal);
+                appMap.put(key, newVal);
             }
         }
     }
 
     // Removes Striim apps that are not needed to maintain data volume goals. This can happen if a table creates a bottleneck that makes the original data volume goals obsolete.
-    public void removeUnneededApps(Map<Integer, String[]> appsToTables) {
+    public void removeExcessApps(Map<Integer, String[]> appsToTables) {
 
         ArrayList<Integer> keysToRemove = new ArrayList<Integer>();
 
@@ -64,7 +64,7 @@ public class LoadBalancer {
     }
 
     // Finds the optimal distribution of tables for each Striim application based on data volumes. Returns a mapping of { App # : tables, data volume }.
-    public Map<Integer, String[]> getAppMap(CachedRowSet rs, double sum, double goal, DatabaseManager dbManager) throws SQLException, ClassNotFoundException {
+    public Map<Integer, String[]> generateAppToTablesMap(CachedRowSet rs, double sum, double goal, DatabaseManager dbManager) throws SQLException, ClassNotFoundException {
 
         int tableCount = 0;
         double tolerance = 0.05;
