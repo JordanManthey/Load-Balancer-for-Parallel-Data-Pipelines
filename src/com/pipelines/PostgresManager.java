@@ -4,7 +4,7 @@ public class PostgresManager extends DatabaseManager {
 
     public PostgresManager(String connectionURL, String username, String password, String excludeList) {
         super(connectionURL, username, password, excludeList);
-        jdbcDriver = "org.postgresql.Driver";
+        this.jdbcDriver = "org.postgresql.Driver";
     }
 
     @Override

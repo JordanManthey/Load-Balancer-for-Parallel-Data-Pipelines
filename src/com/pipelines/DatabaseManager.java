@@ -16,6 +16,7 @@ public abstract class DatabaseManager {
     protected String password;
     protected ArrayList<String> excludedTables;
     protected ArrayList<String> excludedSchemas;
+    protected boolean canPartitionTables;
 
     public DatabaseManager(String connectionURL, String username, String password, String excludedString) {
 
@@ -23,6 +24,7 @@ public abstract class DatabaseManager {
         this.username = username;
         this.password = password;
         this.sourceType = connectionURL.split(":", 3)[1];
+        this.canPartitionTables = false;
 
         // Separate exclude schemas and tables
         for (String e : excludedString.split(";")) {
@@ -72,5 +74,9 @@ public abstract class DatabaseManager {
         crs.populate(rs);
         conn.close();
         return crs;
+    }
+
+    public void partitionTable(String tableName, int numPartitions) throws ClassNotFoundException, SQLException {
+        return;
     }
 }

@@ -4,7 +4,7 @@ public class SQLServerManager extends DatabaseManager {
 
     public SQLServerManager(String connectionURL, String username, String password, String excludeList) {
         super(connectionURL, username, password, excludeList);
-        jdbcDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+        this.jdbcDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
     }
 
     @Override

@@ -10,14 +10,15 @@ import java.util.Map;
 public class LoadBalancer {
 
     public int numApps;
+    public int numCores;
 
     // Allocates parallel threads to each Striim application proportional to the data volume its responsible for
-    public static void allocateCores(Map<Integer, String[]> map, double sum) {
+    public void allocateCores(Map<Integer, String[]> map, double sum) {
 
         for (Integer key : map.keySet()) {
 
             if (!map.get(key)[1].equals("")) {
-                int cores = (int) ((Integer.valueOf(NUM_CORES) * Double.valueOf(map.get(key)[1])) / sum);
+                int cores = (int) ((numCores * Double.valueOf(map.get(key)[1])) / sum);
                 String[] newVal = map.get(key);
                 newVal[2] = String.valueOf(cores);
                 map.put(key, newVal);
@@ -26,7 +27,7 @@ public class LoadBalancer {
     }
 
     // Removes Striim apps that are not needed to maintain data volume goals. This can happen if a table creates a bottleneck that makes the original data volume goals obsolete.
-    public static void removeUnneededApps(Map<Integer, String[]> appsToTables) {
+    public void removeUnneededApps(Map<Integer, String[]> appsToTables) {
 
         ArrayList<Integer> keysToRemove = new ArrayList<Integer>();
 
@@ -63,7 +64,7 @@ public class LoadBalancer {
     }
 
     // Finds the optimal distribution of tables for each Striim application based on data volumes. Returns a mapping of { App # : tables, data volume }.
-    public Map<Integer, String[]> getAppMap(CachedRowSet rs, double sum, double goal) throws SQLException, ClassNotFoundException {
+    public Map<Integer, String[]> getAppMap(CachedRowSet rs, double sum, double goal, DatabaseManager dbManager) throws SQLException, ClassNotFoundException {
 
         int tableCount = 0;
         double tolerance = 0.05;
@@ -96,9 +97,8 @@ public class LoadBalancer {
                     currTotal += tableVol;
                     double diff = tableVol - goal;
 
-                    if (SOURCE_TYPE.equals("oracle")) {
+                    if (dbManager.canPartitionTables) {
                         // Split this table by ROWID
-
                         String tableName = rs.getString(1) + "." + rs.getString(2);
                         if (CommandLineManager.proposeTableSplit(tableName, tableVol, diff)) {
                             // Calculate # chunks based on the size of our app data volume goal
@@ -109,7 +109,8 @@ public class LoadBalancer {
                                 numPartitions++;
                             }
 
-                            splitOracleTable(rs.getString(1) + "." + rs.getString(2), numPartitions);
+                            // Partitions this table and populates this dbManager's partitionMap
+                            dbManager.partitionTable(rs.getString(1) + "." + rs.getString(2), numPartitions);
 
                             for (int n = 0; n < numPartitions; n++) {
                                 if (n == numPartitions - 1) {
@@ -122,7 +123,7 @@ public class LoadBalancer {
                             }
 
                             // Calculate new volume goal for remaining apps now that we split a table which forces a distribution change
-                            int appsRemaining = Integer.valueOf(NUM_APPS) - numPartitions;
+                            int appsRemaining = numApps - numPartitions;
                             goal = (sum - tableVol) / appsRemaining;
                             sum -= tableVol;
                             System.out.println("Updating new goal for the remaining apps (due to table split): " + goal + " MB");
@@ -130,7 +131,7 @@ public class LoadBalancer {
                             rs.deleteRow();
                             break;
 
-                            // Give table its own application
+                        // Give table its own application
                         } else {
                             //scan.close();
                             appsToTables.put(i, new String[] {appsToTables.get(i)[0] + rs.getString(1) + "." + rs.getString(2) + ";", String.valueOf(currTotal), ""});
@@ -141,7 +142,7 @@ public class LoadBalancer {
                             System.out.println("Updating new goal per app (due to table bottleneck): " + goal + " MB");
                             break;
                         }
-                        // Give table its own application
+                    // Give table its own application
                     } else {
                         System.out.println("WARN: Table '" + rs.getString(1) + "." + rs.getString(2) + "' exceeds the app goal by " + diff + " MB. Consider splitting this table.");
                         appsToTables.put(i, new String[] {appsToTables.get(i)[0] + rs.getString(1) + "." + rs.getString(2) + ";", String.valueOf(currTotal), ""});
@@ -152,14 +153,14 @@ public class LoadBalancer {
                         System.out.println("Updating new goal per app: " + goal + " MB");
                         break;
                     }
-                    // Add this table to current application if it's still under our goal and continue searching for this app
+                // Add this table to current application if it's still under our goal and continue searching for this app
                 } else if (tableVol + currTotal < goal-(goal*tolerance)) {
                     currTotal += tableVol;
                     appsToTables.put(i, new String[] {appsToTables.get(i)[0] + rs.getString(1) + "." + rs.getString(2) + ";", String.valueOf(currTotal), ""});
                     tableCount++;
                     rs.deleteRow();
 
-                    // Add this table if it meets our app goal and move onto next app
+                // Add this table if it meets our app goal and move onto next app
                 } else if (tableVol + currTotal < goal+(goal*tolerance) && tableVol + currTotal > goal-(goal*tolerance)) {
                     currTotal += tableVol;
                     appsToTables.put(i, new String[] {appsToTables.get(i)[0] + rs.getString(1) + "." + rs.getString(2) + ";", String.valueOf(currTotal), ""});
@@ -167,7 +168,7 @@ public class LoadBalancer {
                     rs.deleteRow();
                     break;
 
-                    // Skip this table if it will send us over our app goal
+                // Skip this table if it will send us over our app goal
                 } else if (tableVol + currTotal > goal+(goal*tolerance)) {
                     continue;
                 }

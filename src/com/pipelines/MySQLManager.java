@@ -4,7 +4,8 @@ public class MySQLManager extends DatabaseManager {
 
     public MySQLManager(String connectionURL, String username, String password, String excludeList) {
         super(connectionURL, username, password, excludeList);
-        jdbcDriver = "com.mysql.jdbc.Driver";
+        this.jdbcDriver = "com.mysql.jdbc.Driver";
+        this.canPartitionTables = true;
     }
 
     @Override

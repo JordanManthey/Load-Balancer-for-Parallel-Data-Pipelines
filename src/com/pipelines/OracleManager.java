@@ -10,7 +10,8 @@ public class OracleManager extends DatabaseManager {
 
     public OracleManager(String connectionURL, String username, String password, String excludeList) {
         super(connectionURL, username, password, excludeList);
-        jdbcDriver = "oracle.jdbc.driver.OracleDriver";
+        this.jdbcDriver = "oracle.jdbc.driver.OracleDriver";
+        this.canPartitionTables = true;
     }
 
     @Override
@@ -35,6 +36,7 @@ public class OracleManager extends DatabaseManager {
     }
 
     // Generates queries to be added to DBReader "Query" property. These queries split Oracle tables into partitions via ROWID. The goal here is to remove bottlenecks in Striim apps.
+    @Override
     public void partitionTable(String tableName, int numPartitions) throws ClassNotFoundException, SQLException {
 
         // This query generates the Striim DBReader query string needed for each partition of the bottleneck table.
